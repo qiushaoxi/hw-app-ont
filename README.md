@@ -5,7 +5,7 @@
 ```typescript
 require("babel-polyfill");
 import TransportNodeHid from "@ledgerhq/hw-transport-node-hid";
-import HwAppOnt from "../lib/index";
+import HwAppOnt from "@qiushaoxi/hw-app-ont";
 import { Crypto, Transaction, utils } from 'ontology-ts-sdk';
 
 export class OntLedgerSigner {
