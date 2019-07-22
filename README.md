@@ -2,27 +2,40 @@
 
 ## Usage
 
-```javascript
-import Transport from "@ledgerhq/hw-transport-node-hid";
-import App from "@ont-dev/hw-app-ont";
-import { Crypto, Transaction } from 'ontology-ts-sdk';
+```typescript
+require("babel-polyfill");
+import TransportNodeHid from "@ledgerhq/hw-transport-node-hid";
+import HwAppOnt from "../lib/index";
+import { Crypto, Transaction, utils } from 'ontology-ts-sdk';
 
-(async function run() {
-  const ledgerPath = "44'/1024'/0'/0/0";
-  const transactionHex = '0123456789abcdef....';
-
-  const transport = await Transport.create();
-  transport.setExchangeTimeout(15000);
-  const app = new App(transport);
-
-  const publicKey = app.getPublicKey(ledgerPath);
-  console.log(publicKey);
-
-  const ontTransaction = Transaction.deserialize(transactionHex);
-  const unsignedData = ontTransaction.serializeUnsignedData();
-  const result = await this.app.signMessage(ledgerPath, unsignedData);
-  const ontSignature = new Crypto.Signature(Crypto.SignatureScheme.ECDSAwithSHA256, result);
-  const signatureHex = ontSignature.serializeHex();
-  console.log(signatureHex);
-})();
+export class OntLedgerSigner {
+    path: string
+    transport: any
+    app: any
+    constructor(path: string) {
+        this.path = path
+    }
+    async init() {
+        this.transport = await TransportNodeHid.open("");
+        this.app = new HwAppOnt(this.transport);
+    }
+    async close() {
+        await this.transport.close()
+    }
+    async sign(transaction: Transaction): Promise<Crypto.Signature> {
+        const unsignedData = transaction.serializeUnsignedData();
+        const result = await this.app.signMessage(this.path, unsignedData);
+        const ontSignature = new Crypto.Signature(Crypto.SignatureScheme.ECDSAwithSHA256, result);
+        const signatureHex = ontSignature.serializeHex();
+        console.log(signatureHex);
+        return ontSignature;
+    }
+    async getPublicKey(): Promise<Crypto.PublicKey> {
+        const publicKeyStr = await this.app.getPublicKey(this.path);
+        console.log(publicKeyStr);
+        const publicKey = Crypto.PublicKey.deserializeHex(new utils.StringReader(publicKeyStr))
+        console.log(publicKey.serializeHex())
+        return publicKey;
+    }
+};
 ```

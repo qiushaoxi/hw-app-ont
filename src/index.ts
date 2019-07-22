@@ -21,7 +21,6 @@ export default class Ont {
     try {
       const pathBuffer = convertPathToBuffer(path);
       const result = await this.transport.send(0x80, 0x04, 0x00, 0x00, pathBuffer, [VALID_STATUS]);
-      //return result.toString('hex').substring(0, 130);
       const uncompressed = result.toString('hex').substring(0, 130)
       const ec = new elliptic.ec(Crypto.CurveLabel.SECP256R1.preset);
       const keyPair = ec.keyFromPublic(uncompressed, 'hex');
