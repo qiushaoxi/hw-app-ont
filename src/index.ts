@@ -1,4 +1,8 @@
 import { convertPathToBuffer, convertDerToHex } from './utils';
+import TransportNodeHid from "@ledgerhq/hw-transport-node-hid";
+import * as elliptic from 'elliptic';
+import { Crypto } from 'ontology-ts-sdk'
+
 
 const VALID_STATUS = 0x9000;
 const MSG_TOO_BIG = 0x6d08;
@@ -7,22 +11,28 @@ const TX_DENIED = 0x6985;
 const TX_PARSE_ERR = 0x6d07;
 
 export default class Ont {
-  constructor(transport, scrambleKey = 'ONT') {
+  transport: TransportNodeHid
+  constructor(transport: TransportNodeHid, scrambleKey = 'ONT') {
     this.transport = transport;
-    transport.decorateAppAPIMethods(this, ['getPublicKey', 'signMessage'], scrambleKey);
+    //transport.decorateAppAPIMethods(this, ['getPublicKey', 'signMessage'], scrambleKey);
   }
 
-  async getPublicKey(path) {
+  async getPublicKey(path: string) {
     try {
       const pathBuffer = convertPathToBuffer(path);
       const result = await this.transport.send(0x80, 0x04, 0x00, 0x00, pathBuffer, [VALID_STATUS]);
-      return result.toString('hex').substring(0, 130);
+      //return result.toString('hex').substring(0, 130);
+      const uncompressed = result.toString('hex').substring(0, 130)
+      const ec = new elliptic.ec(Crypto.CurveLabel.SECP256R1.preset);
+      const keyPair = ec.keyFromPublic(uncompressed, 'hex');
+      const compressed = keyPair.getPublic(true, 'hex');
+      return compressed;
     } catch (error) {
       throw this._convertTransportError(error);
     }
   }
 
-  async signMessage(path, msg) {
+  async signMessage(path: string, msg: string) {
     try {
       const pathBuffer = convertPathToBuffer(path);
       const data = msg + pathBuffer.toString('hex');
@@ -48,7 +58,7 @@ export default class Ont {
     }
   }
 
-  _convertTransportError(error) {
+  _convertTransportError(error: any) {
     switch (error.statusCode) {
       case APP_CLOSED:
         error.message = 'Your ledger app is closed! Please login.';
