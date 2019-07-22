@@ -1,6 +1,6 @@
 {
   "name": "@qiushaoxi/hw-app-ont",
-  "version": "1.0.3",
+  "version": "1.0.6",
   "description": "Ledger Javascript API for ONT and NEO.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
